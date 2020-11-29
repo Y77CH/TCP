@@ -27,6 +27,7 @@ size_t ByteStream::write(const string &data) {
     size_t len=data.length();
     if(len>_capacity-_buffer.size()){
         //_error=true;
+        //throw runtime_error("ByteStream: write size greater than remaining capacity.");
         len=_capacity-_buffer.size();
     }
     _write_count+=len;
@@ -44,6 +45,7 @@ string ByteStream::peek_output(const size_t len) const {
     size_t length=len;
     if(length>_buffer.size()){
         //_error=true;
+        throw runtime_error("ByteStream: peek size greater than remaining capacity.");
         length=_buffer.size();
     }
     auto iter=_buffer.begin();
@@ -60,6 +62,7 @@ string ByteStream::peek_output(const size_t len) const {
 void ByteStream::pop_output(const size_t len) { 
     size_t length=len;
     if(length>_buffer.size()){
+        throw runtime_error("ByteStream: pop size greater than remaining capacity.");
         //_error=true;
         length=_buffer.size();
     }
