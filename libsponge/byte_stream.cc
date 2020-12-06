@@ -41,7 +41,6 @@ size_t ByteStream::write(const string &data) {
 //! \param[in] len bytes will be copied from the output side of the buffer
 string ByteStream::peek_output(const size_t len) const {
     stringstream buf;
-    string ret;
     size_t length=len;
     if(length>_buffer.size()){
         //_error=true;
@@ -53,9 +52,8 @@ string ByteStream::peek_output(const size_t len) const {
         buf<<(*iter);
         iter++;
     }
-    buf>>ret;
     //DUMMY_CODE(len);
-    return ret;
+    return buf.str();
 }
 
 //! \param[in] len bytes will be removed from the output side of the buffer
