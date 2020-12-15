@@ -5,15 +5,53 @@
 
 #include <cstdint>
 #include <string>
+#include <list>
+#include <vector>
+#include <stdexcept>
+#include <algorithm>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
 class StreamReassembler {
   private:
     // Your code here -- add private members as necessary.
-
+    struct block_node{
+      size_t begin;
+      size_t length;
+    };
+    std::list<block_node> _blocks={};
+    std::vector<char> _buffer={};
+    size_t _unassembled_byte=0;
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
+    
+    long block_intersection_size(block_node x,block_node y){
+      if(x.begin>y.begin){
+        std::swap(x,y);
+      }
+      if(x.begin+x.length<y.begin){
+        return -1;
+      }
+      else if(x.begin+x.length>=y.begin+y.length){
+        return y.length;
+      }
+      else {
+        return x.begin+x.length-y.begin;
+      }
+    }
+
+    block_node block_union(block_node x,block_node y){
+      if(x.begin>y.begin){
+        std::swap(x,y);
+      }
+      if(x.begin+x.length<y.begin){
+        throw std::runtime_error("StreamReassembler: empty intersect.");
+      }
+      else if(x.begin+x.length<y.begin+y.length){
+        x.length=y.begin+y.length-x.begin;
+      }
+      return x;
+    }
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
