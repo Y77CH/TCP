@@ -67,7 +67,6 @@ int main() {
                 size_t end_i = uniform_int_distribution<size_t>{start_i, 8}(rd);
                 auto end = data.begin();
                 std::advance(end, end_i);
-
                 test.execute(SubmitSegment{string{start, end}, 0});
                 test.execute(BytesAssembled(8));
                 test.execute(BytesAvailable(""));
