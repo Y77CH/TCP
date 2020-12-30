@@ -27,26 +27,18 @@ class StreamReassembler {
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
     
-    long block_intersection_size(const block_node nx,const block_node ny){
-      block_node x=nx;
-      block_node y=ny;
-      try{
-        if(x.begin>y.begin){
-          std::swap(x,y);
-        }
-        if(x.begin+x.length<y.begin){
-          return -1;
-        }
-        else if(x.begin+x.length>=y.begin+y.length){
-          return y.length;
-        }
-        else {
-          return x.begin+x.length-y.begin;
-        }
+    long block_intersection_size(block_node x,block_node y){
+      if(x.begin>y.begin){
+        std::swap(x,y);
       }
-      catch(std::exception& e){
-        std::cout<<"block_intersection_size catch excption";
-        throw e;
+      if(x.begin+x.length<y.begin){
+        return -1;
+      }
+      else if(x.begin+x.length>=y.begin+y.length){
+        return y.length;
+      }
+      else {
+        return x.begin+x.length-y.begin;
       }
     }
 

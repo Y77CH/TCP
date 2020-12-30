@@ -21,32 +21,31 @@ StreamReassembler::StreamReassembler(const size_t capacity) : _output(capacity),
 //! contiguous substrings and writes them into the output stream in order.
 void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
     string ndata;
+    size_t nindex;
     if(index+data.length()<_head_index){
         return;
     }
     else if(index<_head_index){
         size_t offset=_head_index-index;
         ndata.assign(data.begin()+offset,data.end());
+        nindex=index+offset;
     }
     else {
         ndata=data;
+        nindex=index;
     }
     bool inserted=false;
-    block_node elm{index,ndata.length()};
+    block_node elm{nindex,ndata.length()};
     _unassembled_byte+=elm.length;
     if(eof){
         _capacity=elm.begin+elm.length;
     }
     for(size_t i=0;i<ndata.length();i++){
-        _buffer[i+index]=ndata[i];
+        _buffer[i+nindex]=ndata[i];
     }
     if(!_blocks.empty()){
-        //cout<<"blocks size: "<<_blocks.size()<<"\n";
         for(auto iter=_blocks.begin();iter!=_blocks.end();){
-            //cout<<"iter ++ "<<_blocks.size()<<"\n";
-            block_node pivot=*iter;
-            long inter_size=block_intersection_size(elm,pivot);
-            if(inter_size>=0){
+            if(block_intersection_size(elm,*iter)>=0){
                 _unassembled_byte-=block_intersection_size(elm,*iter);
                 elm=block_union(elm,*iter);
                 auto a_iter=iter;
@@ -78,12 +77,6 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
     if(_head_index>=_capacity){
         _output.end_input();
     }
-    /*if(_unassembled_byte==_capacity){
-        //for(size_t i=0;i<_capacity;i++){
-            string str;
-            str.assign(_buffer.begin(),_buffer.end());
-            _output.write(str);
-    }*/
     //DUMMY_CODE(data, index, eof);
 }
 
