@@ -1,5 +1,7 @@
 #include "tcp_receiver.hh"
 
+#include <optional>
+
 // Dummy implementation of a TCP receiver
 
 // For Lab 2, please replace with a real implementation that passes the
@@ -11,10 +13,50 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 using namespace std;
 
 bool TCPReceiver::segment_received(const TCPSegment &seg) {
-    DUMMY_CODE(seg);
-    return {};
+    static size_t abs_seqno = 0;
+    size_t length;
+    if (seg.header().syn) {
+        if (_syn_flag) {  // already get a SYN, refuse other SYN.
+            return false;
+        }
+        _syn_flag = true;
+        _isn = seg.header().seqno.raw_value();
+        abs_seqno = 1;
+        _base = 1;
+        length = seg.length_in_sequence_space() - 1;
+        if (length == 0) {  // segment's content only have a SYN flag
+            return true;
+        }
+    } else if (!_syn_flag) {  // before get a SYN, refuse any segment
+        return false;
+    } else {  // not a SYN segment, compute it's abs_seqno
+        abs_seqno = unwrap(WrappingInt32(seg.header().seqno.raw_value()), WrappingInt32(_isn), abs_seqno);
+        length = seg.length_in_sequence_space();
+    }
+
+    if (seg.header().fin) {
+        if (_fin_flag) {  // already get a FIN, refuse other FIN
+            return false;
+        }
+        _fin_flag = true;
+    }
+    // not FIN and not one size's SYN, check border
+    else if (abs_seqno >= _base + _capacity || abs_seqno + length <= _base) {
+        return false;
+    }
+
+    _reassembler.push_substring(seg.payload().str().data(), abs_seqno - 1, seg.header().fin);
+    _base = _reassembler.head_index() + 1;
+    if (_reassembler.input_ended())  // FIN be count as one byte
+        _base++;
+    return true;
 }
 
-optional<WrappingInt32> TCPReceiver::ackno() const { return {}; }
+optional<WrappingInt32> TCPReceiver::ackno() const {
+    if (_base > 0)
+        return WrappingInt32(wrap(_base, WrappingInt32(_isn)));
+    else
+        return std::nullopt;
+}
 
-size_t TCPReceiver::window_size() const { return {}; }
+size_t TCPReceiver::window_size() const { return _capacity - _reassembler.stream_out().buffer_size(); }
