@@ -41,7 +41,7 @@ string ByteStream::peek_output(const size_t len) const {
     size_t length = len;
     if (length > _buffer.size()) {
         //_error=true;
-        throw runtime_error("ByteStream: peek size greater than remaining capacity.");
+        //throw runtime_error("ByteStream: peek size greater than remaining capacity.");
         length = _buffer.size();
     }
     return string().assign(_buffer.begin(), _buffer.begin() + length);
@@ -52,7 +52,7 @@ string ByteStream::peek_output(const size_t len) const {
 void ByteStream::pop_output(const size_t len) {
     size_t length = len;
     if (length > _buffer.size()) {
-        throw runtime_error("ByteStream: pop size greater than remaining capacity.");
+        //throw runtime_error("ByteStream: pop size greater than remaining capacity.");
         //_error=true;
         length = _buffer.size();
     }

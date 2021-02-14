@@ -41,7 +41,7 @@ bool TCPReceiver::segment_received(const TCPSegment &seg) {
         _fin_flag = true;
     }
     // not FIN and not one size's SYN, check border
-    else if (abs_seqno >= _base + _capacity || abs_seqno + length <= _base) {
+    else if (abs_seqno >= _base + window_size() || abs_seqno + length <= _base) {
         return false;
     }
 

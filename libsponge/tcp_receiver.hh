@@ -14,13 +14,13 @@
 //! the acknowledgment number and window size to advertise back to the
 //! remote TCPSender.
 class TCPReceiver {
+  private:
     //! Our data structure for re-assembling bytes.
     StreamReassembler _reassembler;
-    bool _syn_flag=false;
-    bool _fin_flag=false;
-    size_t _base=0;
-    //size_t _checkpoint=0;
-    size_t _isn=0;
+    bool _syn_flag = false;
+    bool _fin_flag = false;
+    size_t _base = 0; // when unintital, equal zero for ackno special judge 
+    size_t _isn = 0;
     //! The maximum number of bytes we'll store.
     size_t _capacity;
 

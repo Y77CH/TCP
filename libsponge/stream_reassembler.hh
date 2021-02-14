@@ -68,8 +68,8 @@ class StreamReassembler {
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
 
-    size_t head_index() const {return _head_index;}
-    bool input_ended() const {return _output.input_ended();}
+    size_t head_index() const { return _head_index; }
+    bool input_ended() const { return _output.input_ended(); }
 };
 
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
