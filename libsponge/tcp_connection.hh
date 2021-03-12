@@ -22,13 +22,14 @@ class TCPConnection {
     bool _linger_after_streams_finish{true};
 
     size_t _time_since_last_segment_received=0;
-    size_t _close_timer=0;
+    //size_t _close_timer=0;
     bool _active=true;
     bool _need_send_ackno=false;
 
 
     bool push_segments_out();
-    bool close_prepared();
+    void unclean_shutdown();
+    bool clean_shutdown();
 
   public:
     //! \name "Input" interface for the writer
