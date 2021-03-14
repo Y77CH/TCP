@@ -120,7 +120,7 @@ void TCPConnection::unclean_shutdown(){
 }
 
 bool TCPConnection::clean_shutdown(){
-    if(_receiver.stream_out().input_ended()&&!(_sender.stream_in().eof())&&_sender.bytes_in_flight()==0){
+    if(_receiver.stream_out().input_ended()&&!(_sender.stream_in().eof())){
         _linger_after_streams_finish=false;
     }
     if(_sender.stream_in().eof()&&_sender.bytes_in_flight()==0&&_receiver.stream_out().input_ended()){
