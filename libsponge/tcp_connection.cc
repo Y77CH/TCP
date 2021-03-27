@@ -21,19 +21,36 @@ size_t TCPConnection::unassembled_bytes() const { return _receiver.unassembled_b
 size_t TCPConnection::time_since_last_segment_received() const { return _time_since_last_segment_received; }
 
 void TCPConnection::segment_received(const TCPSegment &seg) { 
+    bool ignore=false;
     if(!_active) return;
     _time_since_last_segment_received=0;
     if(seg.header().rst){
-        unclean_shutdown();
+            unclean_shutdown(false);
         return;
     }
-    if(seg.header().ack){
-        _sender.ack_received(seg.header().ackno,seg.header().win);
+    if(!_receiver.segment_received(seg)){
+        if(!_receiver.ackno().has_value()&&seg.payload().size()>0){
+            ignore=true;
+        }
+        //cout<<"not recv segment\n";
+        //_need_send_ackno=true;
     }
-    _receiver.segment_received(seg);
-    if(seg.header().syn||seg.header().fin||seg.payload().size()!=0){
+    if(!ignore&&seg.header().ack){
+        if(!_sender.ack_received(seg.header().ackno,seg.header().win)){
+            if(_sender.next_seqno_absolute()==0){
+                unclean_shutdown(true);
+            }
+            else{
+                _need_send_ackno=true;
+            }
+        }
+    }
+    if(seg.length_in_sequence_space()>0){
         _need_send_ackno=true;
     }
+    /*if(seg.header().syn||seg.header().fin||seg.payload().size()!=0){
+        _need_send_ackno=true;
+    }*/
     push_segments_out();
     clean_shutdown();
  }
@@ -53,10 +70,7 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
     clean_shutdown();
     _sender.tick(ms_since_last_tick);
     if(_sender.consecutive_retransmissions()>TCPConfig::MAX_RETX_ATTEMPTS){
-        unclean_shutdown();
-        TCPSegment seg;
-        seg.header().rst=true;
-        _sender.fill_window();
+        unclean_shutdown(true);
     }
     push_segments_out();
  }
@@ -77,11 +91,7 @@ TCPConnection::~TCPConnection() {
     try {
         if (active()) {
             cerr << "Warning: Unclean shutdown of TCPConnection\n";
-        unclean_shutdown();
-        TCPSegment seg;
-        seg.header().rst=true;
-        _sender.fill_window();
-        push_segments_out();
+        unclean_shutdown(true);
 
             // Your code here: need to send a RST segment to the peer
         }
@@ -92,6 +102,15 @@ TCPConnection::~TCPConnection() {
 
 bool TCPConnection::push_segments_out(){
     TCPSegment seg;
+    if(_need_send_rst){
+        _sender.send_empty_segment();
+        seg=_sender.segments_out().front();
+        _sender.segments_out().pop();
+        seg.header().rst=true;
+        _segments_out.push(seg);
+        _need_send_rst=false;
+        return true;
+    }
     if((_need_send_ackno||!_sender.segments_out().empty())&&_receiver.ackno().has_value()){
         if(_sender.segments_out().empty()){
             _sender.send_empty_segment();
@@ -113,10 +132,14 @@ bool TCPConnection::push_segments_out(){
 }
 
 
-void TCPConnection::unclean_shutdown(){
+void TCPConnection::unclean_shutdown(bool send_rst){
     _receiver.stream_out().set_error();
     _sender.stream_in().set_error();
     _active=false;
+    if(send_rst){
+        _need_send_rst=true;
+        push_segments_out();
+    }
 }
 
 bool TCPConnection::clean_shutdown(){

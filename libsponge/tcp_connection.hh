@@ -25,10 +25,11 @@ class TCPConnection {
     //size_t _close_timer=0;
     bool _active=true;
     bool _need_send_ackno=false;
+    bool _need_send_rst=false;
 
 
     bool push_segments_out();
-    void unclean_shutdown();
+    void unclean_shutdown(bool send_rst);
     bool clean_shutdown();
 
   public:
