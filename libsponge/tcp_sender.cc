@@ -130,6 +130,14 @@ void TCPSender::send_empty_segment() {
     _segments_out.push(seg);
 }
 
+void TCPSender::send_empty_segment(WrappingInt32 seqno) {
+    // empty segment doesn't need store to outstanding queue
+    TCPSegment seg;
+    seg.header().seqno = seqno;
+    _segments_out.push(seg);
+}
+
+
 void TCPSender::send_segment(TCPSegment &seg) {
     seg.header().seqno = wrap(_next_seqno, _isn);
     _next_seqno += seg.length_in_sequence_space();

@@ -24,13 +24,15 @@ class TCPConnection {
     size_t _time_since_last_segment_received=0;
     //size_t _close_timer=0;
     bool _active=true;
-    bool _need_send_ackno=false;
     bool _need_send_rst=false;
+    
 
 
-    bool push_segments_out();
+    bool push_segments_out(bool fill_window=true);
     void unclean_shutdown(bool send_rst);
     bool clean_shutdown();
+    bool in_syn_sent();
+    bool in_listen();
 
   public:
     //! \name "Input" interface for the writer
