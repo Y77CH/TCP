@@ -34,18 +34,10 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         // unacceptable ACKs should elicit a RST in SYN_SENT
         if (in_syn_sent() && _sender.next_seqno() - seg.header().ackno > 0) {
             // bad ACK with RST should have been ignored in SYN_SENT
-            if (!seg.header().rst) {
-                _sender.send_empty_segment(seg.header().ackno);
-                unclean_shutdown(true);
-            }
             return;
         } else if (!_sender.ack_received(seg.header().ackno, seg.header().win)) {
             if (in_syn_sent()) {
                 // bad ACK with RST should have been ignored in SYN_SENT
-                if (!seg.header().rst) {
-                    _sender.send_empty_segment(seg.header().ackno);
-                    unclean_shutdown(true);
-                }
                 return;
             }
             send_empty = true;
@@ -59,9 +51,9 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         connect();
         return;
     }
-    // receive ACKs in LISTEN, set RST
+    // receive ACKs in LISTEN, ignore
     if (seg.header().ack && in_listen() && _sender.next_seqno_absolute() == 0) {
-        unclean_shutdown(true);
+        //unclean_shutdown(true);
         return;
     }
 
