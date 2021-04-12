@@ -28,13 +28,15 @@ TCPSender::TCPSender(const size_t capacity, const uint16_t retx_timeout, const s
 
 uint64_t TCPSender::bytes_in_flight() const { return _bytes_in_flight; }
 
-void TCPSender::fill_window() {
+void TCPSender::fill_window(bool send_syn) {
     // sent a SYN before sent other segment
     if (!_syn_flag) {
-        TCPSegment seg;
-        seg.header().syn = true;
-        send_segment(seg);
-        _syn_flag = true;
+        if (send_syn) {
+            TCPSegment seg;
+            seg.header().syn = true;
+            send_segment(seg);
+            _syn_flag = true;
+        }
         return;
     }
 
@@ -85,8 +87,7 @@ bool TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
         if (unwrap(seg.header().seqno, _isn, _next_seqno) + seg.length_in_sequence_space() <= abs_ackno) {
             _bytes_in_flight -= seg.length_in_sequence_space();
             _segments_outstanding.pop();
-        }
-        else {
+        } else {
             break;
         }
     }
@@ -96,12 +97,11 @@ bool TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     _retransmission_timeout = _initial_retransmission_timeout;
     _consecutive_retransmission = 0;
 
-    // if have other outstanding segment, start timer
+
+    // if have other outstanding segment, restart timer
     if (!_segments_outstanding.empty()) {
-        if (!_timer_running) {  // start timer
-            _timer_running = true;
-            _timer = 0;
-        }
+        _timer_running = true;
+        _timer = 0;
     }
     return true;
 }
@@ -136,7 +136,6 @@ void TCPSender::send_empty_segment(WrappingInt32 seqno) {
     seg.header().seqno = seqno;
     _segments_out.push(seg);
 }
-
 
 void TCPSender::send_segment(TCPSegment &seg) {
     seg.header().seqno = wrap(_next_seqno, _isn);
