@@ -220,29 +220,32 @@ bool TCPConnection::clean_shutdown() {
 }
 
 bool TCPConnection::in_listen(){
-    return state()==TCPState::State::LISTEN;
+    return !_receiver.ackno().has_value() && _sender.next_seqno_absolute()==0;
+    //return state()==TCPState::State::LISTEN;
 }
 
 bool TCPConnection::in_syn_recv(){
-    return state()==TCPState::State::SYN_RCVD;
+    return _receiver.ackno().has_value()&&!_receiver.stream_out().input_ended();
+    //return state()==TCPState::State::SYN_RCVD;
 }
-
+/*
 bool TCPConnection::in_closed(){
     return state()==TCPState::State::CLOSED;
-}
+}*/
 
 bool TCPConnection::in_syn_sent() {
-    return state()==TCPState::State::SYN_SENT;
+    return _sender.next_seqno_absolute()>0 && _sender.bytes_in_flight()==_sender.next_seqno_absolute();
+    //return state()==TCPState::State::SYN_SENT;
 }
-
+/*
 bool TCPConnection::in_closing(){
     return state()==TCPState::State::CLOSING;
-}
-
+}*/
+/*
 bool TCPConnection::in_time_wait(){
     return state()==TCPState::State::TIME_WAIT;
-}
-
+}*/
+/*
 bool TCPConnection::in_fin_recv(){
     return _receiver.stream_out().input_ended();
-}
+}*/

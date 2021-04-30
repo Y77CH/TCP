@@ -34,11 +34,11 @@ class TCPConnection {
     bool clean_shutdown();
     bool in_listen();
     bool in_syn_recv();
-    bool in_fin_recv();
-    bool in_closed();
+    //bool in_fin_recv();
+    //bool in_closed();
     bool in_syn_sent();
-    bool in_closing();
-    bool in_time_wait();
+    //bool in_closing();
+    //bool in_time_wait();
     //bool in_syn_acked();
     //bool in_fin_sent();
     //bool in_fin_acked();
