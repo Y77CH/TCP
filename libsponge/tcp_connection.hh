@@ -21,27 +21,17 @@ class TCPConnection {
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
 
-    size_t _time_since_last_segment_received=0;
-    //size_t _close_timer=0;
-    bool _active=true;
-    bool _need_send_rst=false;
-    bool _ack_for_fin_sent=false;
-    
+    size_t _time_since_last_segment_received = 0;
+    bool _active = true;
+    bool _need_send_rst = false;
+    bool _ack_for_fin_sent = false;
 
-
-    bool push_segments_out(bool send_syn=false);
+    bool push_segments_out(bool send_syn = false);
     void unclean_shutdown(bool send_rst);
     bool clean_shutdown();
     bool in_listen();
     bool in_syn_recv();
-    //bool in_fin_recv();
-    //bool in_closed();
     bool in_syn_sent();
-    //bool in_closing();
-    //bool in_time_wait();
-    //bool in_syn_acked();
-    //bool in_fin_sent();
-    //bool in_fin_acked();
 
   public:
     //! \name "Input" interface for the writer

@@ -97,7 +97,6 @@ bool TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     _retransmission_timeout = _initial_retransmission_timeout;
     _consecutive_retransmission = 0;
 
-
     // if have other outstanding segment, restart timer
     if (!_segments_outstanding.empty()) {
         _timer_running = true;

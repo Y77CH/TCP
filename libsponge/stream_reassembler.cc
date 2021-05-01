@@ -47,7 +47,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
     if (index >= _head_index + _capacity) {  // capacity over
         return;
     }
-    
+
     // handle extra substring prefix
     block_node elm;
     if (index + data.length() <= _head_index) {  // couldn't equal, because there have emtpy substring
@@ -108,7 +108,6 @@ JUDGE_EOF:
     if (_eof_flag && empty()) {
         _output.end_input();
     }
-    // DUMMY_CODE(data, index, eof);
 }
 
 size_t StreamReassembler::unassembled_bytes() const { return _unassembled_byte; }

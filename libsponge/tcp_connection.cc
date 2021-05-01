@@ -2,9 +2,6 @@
 
 #include <iostream>
 
-#define LAB4_DEBUG 0
-
-
 // Dummy implementation of a TCP connection
 
 // For Lab 4, please replace with a real implementation that passes the
@@ -24,17 +21,9 @@ size_t TCPConnection::unassembled_bytes() const { return _receiver.unassembled_b
 size_t TCPConnection::time_since_last_segment_received() const { return _time_since_last_segment_received; }
 
 void TCPConnection::segment_received(const TCPSegment &seg) {
-#if LAB4_DEBUG
-    //cout<<"receiver.ackno: "<<_receiver.ackno().value()<<"\n";
-    cout<<"recv: "<<seg.header().summary()<<"\n";
-    //cout<<"_ack_for_fin_sent: "<<_ack_for_fin_sent<<"\n\n";
-#endif
-    // cout<<seg.header().to_string()<<"\n";
     if (!_active)
         return;
     _time_since_last_segment_received = 0;
-    
-    
 
     // data segments with acceptable ACKs should be ignored in SYN_SENT
     if (in_syn_sent() && seg.header().ack && seg.payload().size() > 0) {
@@ -43,49 +32,22 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     bool send_empty = false;
     if (_sender.next_seqno_absolute() > 0 && seg.header().ack) {
         // unacceptable ACKs should produced a segment that existed
-        if(!_sender.ack_received(seg.header().ackno, seg.header().win)){
-            send_empty=true;
-            #if LAB4_DEBUG
-            cout<<"!sender\n";
-            #endif
-        }
-        /*// unacceptable ACKs should elicit a RST in SYN_SENT
-        if (in_syn_sent() && _sender.next_seqno() - seg.header().ackno > 0) {
-            // bad ACK with RST should have been ignored in SYN_SENT
-            return;
-        } else if (!_sender.ack_received(seg.header().ackno, seg.header().win)) {
-            if (in_syn_sent()) {
-                // bad ACK with RST should have been ignored in SYN_SENT
-                return;
-            }
+        if (!_sender.ack_received(seg.header().ackno, seg.header().win)) {
             send_empty = true;
-        }*/
+        }
     }
+
     bool recv_flag = _receiver.segment_received(seg);
     if (!recv_flag) {
         send_empty = true;
-            #if LAB4_DEBUG
-            cout<<"!recv\n";
-            #endif
     }
-    /*// in LISTEN, old seqno should produced a segment that existed 
-    if(_receiver.){
 
-    }*/
     if (seg.header().syn && _sender.next_seqno_absolute() == 0) {
         connect();
         return;
     }
 
-    /*
-    // receive ACKs in LISTEN, ignore
-    if (seg.header().ack && in_listen() && _sender.next_seqno_absolute() == 0) {
-        //unclean_shutdown(true);
-        return;
-    }*/
-
     if (seg.header().rst) {
-        // TODO: more judge
         // RST segments without ACKs should be ignored in SYN_SENT
         if (in_syn_sent() && !seg.header().ack) {
             return;
@@ -94,35 +56,16 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         return;
     }
 
-    // TODO: fin
     if (seg.length_in_sequence_space() > 0) {
         send_empty = true;
-            #if LAB4_DEBUG
-            cout<<"!nonempty seq\n";
-            #endif
     }
 
-    /*
-    // when TIME_WAIT && sent ACK for peer's FIN, do not send any segment
-    if(in_fin_recv()){
-        if(_ack_for_fin_sent){
-            clean_shutdown();
-            return;
-        }
-        else{
-            _ack_for_fin_sent=true;
-        }
-    }*/
     if (send_empty) {
         if (_receiver.ackno().has_value() && _sender.segments_out().empty()) {
             _sender.send_empty_segment();
-            #if LAB4_DEBUG
-                cout<<"send_empty_seg\n";
-            #endif 
         }
     }
     push_segments_out();
-    // clean_shutdown();
 }
 
 bool TCPConnection::active() const { return _active; }
@@ -138,7 +81,6 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
     if (!_active)
         return;
     _time_since_last_segment_received += ms_since_last_tick;
-    // clean_shutdown();
     _sender.tick(ms_since_last_tick);
     if (_sender.consecutive_retransmissions() > TCPConfig::MAX_RETX_ATTEMPTS) {
         unclean_shutdown(true);
@@ -159,10 +101,9 @@ void TCPConnection::connect() {
 TCPConnection::~TCPConnection() {
     try {
         if (active()) {
+            // Your code here: need to send a RST segment to the peer
             cerr << "Warning: Unclean shutdown of TCPConnection\n";
             unclean_shutdown(true);
-
-            // Your code here: need to send a RST segment to the peer
         }
     } catch (const exception &e) {
         std::cerr << "Exception destructing TCP FSM: " << e.what() << std::endl;
@@ -171,7 +112,7 @@ TCPConnection::~TCPConnection() {
 
 bool TCPConnection::push_segments_out(bool send_syn) {
     // default not send syn before recv a SYN
-    _sender.fill_window(send_syn||in_syn_recv());
+    _sender.fill_window(send_syn || in_syn_recv());
     TCPSegment seg;
     while (!_sender.segments_out().empty()) {
         seg = _sender.segments_out().front();
@@ -186,9 +127,6 @@ bool TCPConnection::push_segments_out(bool send_syn) {
             seg.header().rst = true;
         }
         _segments_out.push(seg);
-#if LAB4_DEBUG
-    cout<<"send: "<<seg.header().summary()<<"  least: "<<_segments_out.size()<<"\n";
-#endif
     }
     clean_shutdown();
     return true;
@@ -219,33 +157,10 @@ bool TCPConnection::clean_shutdown() {
     return !_active;
 }
 
-bool TCPConnection::in_listen(){
-    return !_receiver.ackno().has_value() && _sender.next_seqno_absolute()==0;
-    //return state()==TCPState::State::LISTEN;
-}
+bool TCPConnection::in_listen() { return !_receiver.ackno().has_value() && _sender.next_seqno_absolute() == 0; }
 
-bool TCPConnection::in_syn_recv(){
-    return _receiver.ackno().has_value()&&!_receiver.stream_out().input_ended();
-    //return state()==TCPState::State::SYN_RCVD;
-}
-/*
-bool TCPConnection::in_closed(){
-    return state()==TCPState::State::CLOSED;
-}*/
+bool TCPConnection::in_syn_recv() { return _receiver.ackno().has_value() && !_receiver.stream_out().input_ended(); }
 
 bool TCPConnection::in_syn_sent() {
-    return _sender.next_seqno_absolute()>0 && _sender.bytes_in_flight()==_sender.next_seqno_absolute();
-    //return state()==TCPState::State::SYN_SENT;
+    return _sender.next_seqno_absolute() > 0 && _sender.bytes_in_flight() == _sender.next_seqno_absolute();
 }
-/*
-bool TCPConnection::in_closing(){
-    return state()==TCPState::State::CLOSING;
-}*/
-/*
-bool TCPConnection::in_time_wait(){
-    return state()==TCPState::State::TIME_WAIT;
-}*/
-/*
-bool TCPConnection::in_fin_recv(){
-    return _receiver.stream_out().input_ended();
-}*/
