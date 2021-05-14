@@ -60,7 +60,7 @@ static tuple<TCPConfig, FdAdapterConfig, bool, char *> get_config(int argc, char
     int curr = 1;
     bool listen = false;
 
-    string source_address = "0";
+    string source_address = LOCAL_ADDRESS_DFLT;
     string source_port = to_string(uint16_t(random_device()()));
 
     while (argc - curr > 2) {
@@ -142,8 +142,8 @@ int main(int argc, char **argv) {
         }
 
         auto [c_fsm, c_filt, listen, tun_dev_name] = get_config(argc, argv);
-        LossyTCPOverIPv4SpongeSocket tcp_socket(TunFD(tun_dev_name == nullptr ? TUN_DFLT : tun_dev_name));
-        deque<string> write_queue;
+        LossyTCPOverIPv4SpongeSocket tcp_socket(LossyTCPOverIPv4OverTunFdAdapter(
+            TCPOverIPv4OverTunFdAdapter(TunFD(tun_dev_name == nullptr ? TUN_DFLT : tun_dev_name))));
 
         if (listen) {
             tcp_socket.listen_and_accept(c_fsm, c_filt);
